@@ -18,6 +18,7 @@ def df(x, deg):
 def g(x, sigma, deg):
     return df(x, deg) * (1 + np.random.normal(0, sigma, x.size))
 
+
 def run_plot(deg, sigma, T=1, noofruns=1, batch_size=1):
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
@@ -26,17 +27,36 @@ def run_plot(deg, sigma, T=1, noofruns=1, batch_size=1):
     R = (1 + sigma ** 2)
     effective_runs = int(noofruns / batch_size)
 
-    mean_HNAG = np.zeros(T)
-    mean_IHNAG = np.zeros(T)
+    mean_SHANG = np.zeros(T)
+    mean_SHANGplus = np.zeros(T)
+    mean_AGNES = np.zeros(T)
+    mean_GD = np.zeros(T)
+    mean_NAG = np.zeros(T)
+    mean_SNAG = np.zeros(T)
 
-    x_HNAG = np.ones(noofruns)
-    v_HNAG = np.ones(noofruns)
+    x_SHANG = np.ones(noofruns)
+    v_SHANG = np.ones(noofruns)
 
-    x_IHNAG = np.ones(noofruns)
-    v_IHNAG = np.ones(noofruns)
+    x_SHANGplus = np.ones(noofruns)
+    v_SHANGplus = np.ones(noofruns)
 
-    val_HNAG = np.zeros(noofruns)
-    val_IHNAG = np.zeros(noofruns)
+    x_AGNES = np.ones(noofruns)
+    v_AGNES = np.ones(noofruns)
+
+    x_SNAG = np.ones(noofruns)
+    z_SNAG = np.ones(noofruns)
+
+    x_NAG = np.ones(noofruns)
+    y_NAG = np.ones(noofruns)
+
+    x_GD = np.ones(noofruns)
+
+    val_SHANG = np.zeros(noofruns)
+    val_SHANGplus = np.zeros(noofruns)
+    val_AGNES = np.zeros(noofruns)
+    val_GD = np.zeros(noofruns)
+    val_NAG = np.zeros(noofruns)
+    val_SNAG = np.zeros(noofruns)
 
     for n in range(T):
         if n % 50000 == 0:
@@ -44,54 +64,111 @@ def run_plot(deg, sigma, T=1, noofruns=1, batch_size=1):
             current_time = now.strftime("%H:%M:%S")
             print("   Time is " + str(current_time) + ", steps = ", n)
         for i in range(effective_runs):
+
             # HNAG
-            xcurrent_HNAG = x_HNAG[range(int(i * batch_size), int((i + 1) * batch_size))]
-            v_prev_HNAG = v_HNAG[range(int(i * batch_size), int((i + 1) * batch_size))]
-            val_HNAG[range(int(i * batch_size), int((i + 1) * batch_size))] = f(xcurrent_HNAG, deg)
-            alpha_HNAG = 2 / (n + 1)
-            gamma_HNAG = alpha_HNAG ** 2 * L * R ** 2
-            beta_HNAG = R * alpha_HNAG / gamma_HNAG
+            xcurrent_SHANG = x_SHANG[range(int(i * batch_size), int((i + 1) * batch_size))]
+            v_prev_SHANG = v_SHANG[range(int(i * batch_size), int((i + 1) * batch_size))]
+            val_SHANG[range(int(i * batch_size), int((i + 1) * batch_size))] = f(xcurrent_SHANG, deg)
+            alpha_SHANG = 2 / (n + 1)
+            gamma_SHANG = alpha_SHANG ** 2 * L * R ** 2
+            beta_SHANG = (1 + sigma ** 2) * alpha_SHANG / gamma_SHANG
             if n == 0:
-                alpha_prev_HNAG = alpha_HNAG
-                gamma_prev_HNAG = gamma_HNAG
+                alpha_prev_SHANG = alpha_SHANG
+                gamma_prev_SHANG = gamma_SHANG
             else:
-                alpha_prev_HNAG = 2 / n
-                gamma_prev_HNAG = alpha_prev_HNAG ** 2 * L * R ** 2
-            grad_HNAG = g(xcurrent_HNAG, sigma, deg)
-            v_current_HNAG = v_prev_HNAG - (alpha_prev_HNAG / gamma_prev_HNAG) * grad_HNAG
-            v_HNAG[range(int(i * batch_size), int((i + 1) * batch_size))] = v_current_HNAG
-            x_HNAG[range(int(i * batch_size), int((i + 1) * batch_size))] = (1 / (1 + alpha_HNAG)) * xcurrent_HNAG + (
-                        alpha_HNAG / (1 + alpha_HNAG)) * v_current_HNAG - beta_HNAG * (alpha_HNAG / (
-                        1 + alpha_HNAG)) * grad_HNAG
+                alpha_prev_SHANG = 2 / n
+                gamma_prev_SHANG = alpha_prev_SHANG ** 2 * L * R ** 2
+            grad_SHANG = g(xcurrent_SHANG, sigma, deg)
+            v_current_SHANG = v_prev_SHANG - (alpha_prev_SHANG / gamma_prev_SHANG) * grad_SHANG
+            v_SHANG[range(int(i * batch_size), int((i + 1) * batch_size))] = v_current_SHANG
+            x_SHANG[range(int(i * batch_size), int((i + 1) * batch_size))] = (1 / (1 + alpha_SHANG)) * xcurrent_SHANG + (
+                        alpha_SHANG / (1 + alpha_SHANG)) * v_current_SHANG - beta_SHANG * (alpha_SHANG / (
+                        1 + alpha_SHANG)) * grad_SHANG
 
             # IHNAG
-            xcurrent_IHNAG = x_IHNAG[range(int(i * batch_size), int((i + 1) * batch_size))]
-            v_prev_IHNAG = v_IHNAG[range(int(i * batch_size), int((i + 1) * batch_size))]
-            val_IHNAG[range(int(i * batch_size), int((i + 1) * batch_size))] = f(xcurrent_IHNAG, deg)
-            alpha_IHNAG = 2 / (n + 1)
-            rho_IHNAG = 1.5
-            modified_alpha_IHNAG = alpha_IHNAG / (1 + rho_IHNAG * alpha_IHNAG)
-            gamma_IHNAG = alpha_IHNAG * modified_alpha_IHNAG * L * R ** 2
-            beta_IHNAG = R * alpha_IHNAG / gamma_IHNAG
+            xcurrent_SHANGplus = x_SHANGplus[range(int(i * batch_size), int((i + 1) * batch_size))]
+            v_prev_SHANGplus = v_SHANGplus[range(int(i * batch_size), int((i + 1) * batch_size))]
+            val_SHANGplus[range(int(i * batch_size), int((i + 1) * batch_size))] = f(xcurrent_SHANGplus, deg)
+            alpha_SHANGplus = 2 / (n + 1)
+            rho_SHANGplus = 1.5
+            modified_alpha_SHANGplus = alpha_SHANGplus / (1 + rho_SHANGplus * alpha_SHANGplus)
+            gamma_SHANGplus = alpha_SHANGplus * modified_alpha_SHANGplus * L * R ** 2
+            beta_SHANGplus = (1 + sigma ** 2) * alpha_SHANGplus / gamma_SHANGplus
             if n == 0:
-                alpha_prev_IHNAG = alpha_IHNAG
-                gamma_prev_IHNAG = gamma_IHNAG
+                alpha_prev_SHANGplus = alpha_SHANGplus
+                gamma_prev_SHANGplus = gamma_SHANGplus
             else:
-                alpha_prev_IHNAG = 2 / (n)
-                modified_alpha_prev_IHNAG = alpha_prev_IHNAG / (1 + rho_IHNAG * alpha_prev_IHNAG)
-                gamma_prev_IHNAG = alpha_prev_IHNAG * modified_alpha_prev_IHNAG * L * R ** 2
-            grad_IHNAG = g(xcurrent_IHNAG, sigma, deg)
-            v_current_IHNAG = v_prev_IHNAG - (alpha_prev_IHNAG / gamma_prev_IHNAG) * grad_IHNAG
-            v_IHNAG[range(int(i * batch_size), int((i + 1) * batch_size))] = v_current_IHNAG
-            x_IHNAG[range(int(i * batch_size), int((i + 1) * batch_size))] \
-                                         = ((1 / (1 + modified_alpha_IHNAG)) * xcurrent_IHNAG
-                                            + (modified_alpha_IHNAG / (1 + modified_alpha_IHNAG)) * v_current_IHNAG
-                                            - beta_IHNAG * (modified_alpha_IHNAG / (1 + modified_alpha_IHNAG)) * grad_IHNAG)
+                alpha_prev_SHANGplus = 2 / (n)
+                modified_alpha_prev_SHANGplus = alpha_prev_SHANGplus / (1 + rho_SHANGplus * alpha_prev_SHANGplus)
+                gamma_prev_SHANGplus = alpha_prev_SHANGplus * modified_alpha_prev_SHANGplus * L * R ** 2
+            grad_SHANGplus = g(xcurrent_SHANGplus, sigma, deg)
+            v_current_SHANGplus = v_prev_SHANGplus - (alpha_prev_SHANGplus / gamma_prev_SHANGplus) * grad_SHANGplus
+            v_SHANGplus[range(int(i * batch_size), int((i + 1) * batch_size))] = v_current_SHANGplus
+            x_SHANGplus[range(int(i * batch_size), int((i + 1) * batch_size))] = ((1 / (
+                        1 + modified_alpha_SHANGplus)) * xcurrent_SHANGplus
+                        + (modified_alpha_SHANGplus / (1 + modified_alpha_SHANGplus)) * v_current_SHANGplus
+                        - beta_SHANGplus * (modified_alpha_SHANGplus / ( 1 + modified_alpha_SHANGplus)) * grad_SHANGplus)
 
-        mean_HNAG[n] = np.mean(val_HNAG)
-        mean_IHNAG[n] = np.mean(val_IHNAG)
+            # AGNES
+            # From https://github.com/kanangupta/AGNES
+            xcurrent_AGNES = x_AGNES[range(int(i * batch_size), int((i + 1) * batch_size))]
+            vcurrent_AGNES = v_AGNES[range(int(i * batch_size), int((i + 1) * batch_size))]
+            val_AGNES[range(int(i * batch_size), int((i + 1) * batch_size))] = f(xcurrent_AGNES, deg)
+            eta_AGNES = 1 / (L * (1 + 2 * sigma ** 2))
+            gamma_AGNES = 1
+            alpha_AGNES = eta_AGNES / R
+            xprime_AGNES = xcurrent_AGNES + alpha_AGNES * vcurrent_AGNES
+            rho_AGNES = (n) / (n + 5)
+            grad_AGNES = g(xprime_AGNES, sigma, deg)
+            v_AGNES[range(int(i * batch_size), int((i + 1) * batch_size))] = rho_AGNES * (
+                        vcurrent_AGNES - gamma_AGNES * grad_AGNES)
+            x_AGNES[range(int(i * batch_size), int((i + 1) * batch_size))] = xprime_AGNES - eta_AGNES * grad_AGNES
 
-    return (mean_HNAG, mean_IHNAG)
+            # SNAG From: Algorthm2 in Paper: Julien Hermant, Marien Renaud, Jean-François Aujol, Charles Dossal,
+            # and Aude Rondepierre. Gradient correlation is a key ingredient to accelerate SGD with momentum.
+            #     (ICLR), 2025.
+            xcurrent_SNAG = x_SNAG[range(int(i * batch_size), int((i + 1) * batch_size))]
+            zcurrent_SNAG = z_SNAG[range(int(i * batch_size), int((i + 1) * batch_size))]
+            val_SNAG[range(int(i * batch_size), int((i + 1) * batch_size))] = f(xcurrent_SNAG, deg)
+            s_SNAG = 1 / (L * R)
+            part_SNAG = (n ** 2) / (n + 1)
+            eta_SNAG = (s_SNAG / R) * (n + 1) / 2
+            beta_SNAG = 1
+            alpha_SNAG = part_SNAG / (2 + part_SNAG)
+            xprime_SNAG = alpha_SNAG * xcurrent_SNAG + (1 - alpha_SNAG) * zcurrent_SNAG
+            grad_SNAG = g(xprime_SNAG, sigma, deg)
+            x_SNAG[range(int(i * batch_size), int((i + 1) * batch_size))] = xprime_SNAG - s_SNAG * grad_SNAG
+            z_SNAG[range(int(i * batch_size), int((i + 1) * batch_size))] = beta_SNAG * zcurrent_SNAG + (
+                        1 - beta_SNAG) * xprime_SNAG - eta_SNAG * grad_SNAG
+
+            # GD
+            xcurrent_GD = x_GD[range(int(i * batch_size), int((i + 1) * batch_size))]
+            val_GD[range(int(i * batch_size), int((i + 1) * batch_size))] = f(xcurrent_GD, deg)
+            eta_GD = 1 / (L * R)
+            grad_GD = g(xcurrent_GD, sigma, deg)
+            x_GD[range(int(i * batch_size), int((i + 1) * batch_size))] = xcurrent_GD - eta_GD * grad_GD
+
+            # NAG
+            xcurrent_NAG = x_NAG[range(int(i * batch_size), int((i + 1) * batch_size))]
+            ycurrent_NAG = y_NAG[range(int(i * batch_size), int((i + 1) * batch_size))]
+            val_NAG[range(int(i * batch_size), int((i + 1) * batch_size))] = f(xcurrent_NAG, deg)
+            rho_NAG = (n) / (n + 3)
+            eta_NAG = 1 / (L * (1 + sigma ** 2))
+            grad_NAG = g(ycurrent_NAG, sigma, deg)
+            xNAG_prev = xcurrent_NAG
+            x_NAG[range(int(i * batch_size), int((i + 1) * batch_size))] = ycurrent_NAG - eta_NAG * grad_NAG
+            y_NAG[range(int(i * batch_size), int((i + 1) * batch_size))] = x_NAG[range(int(i * batch_size), int((
+                                                                         i + 1) * batch_size))] + rho_NAG * (
+                                                                         x_NAG[range(int(i * batch_size),
+                                                                         int(( i + 1) * batch_size))] - xNAG_prev)
+
+        mean_SHANG[n] = np.mean(val_SHANG)
+        mean_SHANGplus[n] = np.mean(val_SHANGplus)
+        mean_AGNES[n] = np.mean(val_AGNES)
+        mean_NAG[n] = np.mean(val_NAG)
+        mean_SNAG[n] = np.mean(val_SNAG)
+        mean_GD[n] = np.mean(val_GD)
+    return (mean_SHANG, mean_SHANGplus, mean_AGNES, mean_SNAG, mean_NAG, mean_GD)
 
 
 globalnoofruns = 200  # for averaging over randomness
@@ -101,8 +178,12 @@ T = 100000  # number of steps the algorithm takes
 sigmas = [0, 10, 50]
 degs = [4, 16]
 
-means_HNAG = np.zeros(shape=[len(degs), len(sigmas), T])
-means_IHNAG = np.zeros(shape=[len(degs), len(sigmas), T])
+means_SHANG = np.zeros(shape=[len(degs), len(sigmas), T])
+means_SHANGplus = np.zeros(shape=[len(degs), len(sigmas), T])
+means_AGNES = np.zeros(shape=[len(degs), len(sigmas), T])
+means_SNAG = np.zeros(shape=[len(degs), len(sigmas), T])
+means_GD = np.zeros(shape=[len(degs), len(sigmas), T])
+means_NAG = np.zeros(shape=[len(degs), len(sigmas), T])
 
 for i in range(len(degs)):
     for j in range(len(sigmas)):
@@ -115,22 +196,46 @@ for i in range(len(degs)):
             noofruns = globalnoofruns
             batchsize = golablbatchsize
         effectiveruns = int(noofruns / batchsize)
-        means_HNAG[i, j, :], means_IHNAG[i, j, :] = run_plot(deg,sigma,T=T,noofruns=noofruns,batch_size=batchsize)
+        (means_SHANG[i, j, :],
+         means_SHANGplus[i, j, :],
+         means_AGNES[i, j, :],
+         means_SNAG[i, j, :],
+         means_NAG[i, j, :],
+         means_GD[i, j, :]) = run_plot(deg, sigma, T=T,noofruns=noofruns, batch_size=batchsize)
 
 
-for i, d in enumerate(degs):
-    for s, sigma in enumerate(sigmas):
-        plt.figure()
-        plt.title(f"d = {d}, σ = {sigma}")
-        #     plt.ylim(bottom=1e-7, top=2e2)
+for i in range(len(degs)):
+  plt.figure()
+  plt.title("d = "+str(degs[i]))
+  plt.ylim(bottom = 1e-7, top = 2e2)
+  gdsig0, = plt.loglog(means_GD[i,0, :], color = 'black')  #label = "GD, sigma = "+str(sigmas[0])
+  gdsig1, = plt.loglog(means_GD[i,1, :],color = 'black', linestyle = '--') #label = "GD, sigma = "+str(sigmas[1])
+  gdsig2, = plt.loglog(means_GD[i,2, :],color = 'black', linestyle = ':') #label = "GD, sigma = "+str(sigmas[2])
 
-        hnagsig, = plt.loglog(means_HNAG[i, s, :], color='green', linestyle='-')
-        ihnagsig, = plt.loglog(means_IHNAG[i, s, :], color='red', linestyle='-')
+  nasig0, = plt.loglog(means_NAG[i,0, :], color = 'olive') #label = "NAG, sigma = "+str(sigmas[0])
+  plt.loglog(means_NAG[i,1, :],color = 'olive', linestyle = '--', label = "NAG, sigma = "+str(sigmas[1]))
+  plt.loglog(means_NAG[i,2, :],color = 'olive', linestyle = ':', label = "NAG, sigma = "+str(sigmas[2]))
 
-        plt.legend([hnagsig, ihnagsig],
-                   ["SHNAG", "ISHNAG"],
-                   loc=1)
+  snasig0, = plt.loglog(means_SNAG[i, 0, :], color='orange')  # label = "SNAG, sigma = "+str(sigmas[0])
+  plt.loglog(means_SNAG[i, 1, :], color='orange', linestyle='--', label="SNAG, sigma = " + str(sigmas[1]))
+  plt.loglog(means_SNAG[i, 2, :], color='orange', linestyle=':', label="SNAG, sigma = " + str(sigmas[2]))
 
-        path = f"./convex_example_deg{d}_sigma{sigma}.png"
-        plt.savefig(path, dpi=300, bbox_inches='tight')
-        plt.show()
+  agsig0, = plt.loglog(means_AGNES[i,0, :], color = 'blue') #label = "AGNES, sigma = "+str(sigmas[runs23])
+  plt.loglog(means_AGNES[i,1, :], color = 'blue', linestyle = '--') #label = "AGNES, sigma = "+str(sigmas[1])
+  plt.loglog(means_AGNES[i,2, :], color ='blue', linestyle = ':') #label = "AGNES, sigma = "+str(sigmas[2])
+
+  hnagsig0, = plt.loglog(means_SHANG[i, 0, :], color='green')  # label = "SHANG, sigma = "+str(sigmas[0])
+  plt.loglog(means_SHANG[i, 1, :], color='green', linestyle='--', label="SHANG, sigma = " + str(sigmas[1]))
+  plt.loglog(means_SHANG[i, 2, :], color='green', linestyle=':', label="SHANG, sigma = " + str(sigmas[2]))
+
+  ihnagsig0, = plt.loglog(means_SHANGplus[i, 0, :], color='red')  # label = "SHANG++, sigma = "+str(sigmas[0])
+  plt.loglog(means_SHANGplus[i, 1, :], color='red', linestyle='--', label="SHANG++, sigma = " + str(sigmas[1]))
+  plt.loglog(means_SHANGplus[i, 2, :], color='red', linestyle=':', label="SHANG++, sigma = " + str(sigmas[2]))
+
+  plt.legend()
+  sigma_labels = ["σ = "+str(sigma) for sigma in sigmas]
+  legend1 = plt.legend([gdsig0, gdsig1, gdsig2], sigma_labels, loc=3)
+  plt.legend([gdsig0, nasig0], ["SGD", "NAG"], loc=2)
+  plt.legend([gdsig0, nasig0,snasig0, agsig0, hnagsig0, ihnagsig0], ["SGD", "NAG", "SNAG", "AGNES", "SHANG", "SHANG++"], loc=2)
+  plt.gca().add_artist(legend1)
+  plt.show()
