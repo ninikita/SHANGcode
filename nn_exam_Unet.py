@@ -7,7 +7,6 @@ from torchvision import datasets, models, transforms
 import os, random
 import torch.nn.functional as F
 from util import *
-from SHNAG_optim import SHANG, ISHANG
 
 # 中量 UNet
 class UNet(nn.Module):
@@ -165,7 +164,7 @@ for run, seed in enumerate(seeds):
 
     opt_names = {
         'SHANG': 'SHANG(self.net.parameters(), alpha={} , time_scale={}, weight_decay={})'.format(0.5, 0.5, 1e-5),
-        'ISHANG': 'ISHANG(self.net.parameters(), alpha={} , time_scale={}, rho = {}, weight_decay={})'.format(0.5, 0.5, 1.5, 1e-5),
+        'SHANG++': 'SHANGPlus(self.net.parameters(), alpha={} , time_scale={}, rho = {}, weight_decay={})'.format(0.5, 0.5, 1.5, 1e-5),
         'AGNES': 'AGNES(self.net.parameters(), lr={} , momentum={} , correction={}, weight_decay = {})'.format(0.01, 0.99,  0.001, 1e-5),
         'NAG,': 'AGNES(self.net.parameters(), lr={} , momentum={} , correction={}, weight_decay={})'.format(1e-3, 0.99, 1e-3, 1e-5),
         'ADAM': 'torch.optim.Adam(self.net.parameters(), lr=1e-3, weight_decay=1e-5)',
@@ -186,3 +185,103 @@ for run, seed in enumerate(seeds):
                   lr_factor2=2,
                   manual_seed = False,
                   verbose=False)
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+data = {}
+runs = 5
+train_size = 50000
+batch = 5
+epochs = 50
+epoch_step = train_size / batch
+total_steps = epoch_step * epochs
+title = "CIFAR10-UNet_batch5_for5runs"
+
+names = [
+    'SGD',
+    'SHB',
+    'NAG',
+    'ADAM',
+    'SNAG',
+    'AGNES',
+    'SHANG',
+    'SHANG++',
+
+]
+
+# 设置颜色和线型
+colors = {}
+linestyles = {}
+style_list = ['-', '--', ':']
+
+color_map = {
+    'SGD':'gray',
+    'SHB':'black',
+    'NAG':'olive',
+    'AGNES':'blue',
+    'SNAG':'orange',
+    'ADAM':'yellow',
+    'SHANG++': 'red',
+    'SHANG': 'green',
+}
+
+class_count = {key: 0 for key in color_map}
+
+for name in names:
+    for key in color_map:
+        if name.startswith(key):
+            colors[name] = color_map[key]
+            linestyles[name] = style_list[class_count[key] % len(style_list)]
+            class_count[key] += 1
+            break
+    else:
+        colors[name] = 'black'
+        linestyles[name] = '-'
+
+metrics = ['Test Loss', 'Training Loss']
+decay = 0.999
+
+for name in names:
+    data[name] = {'Test Loss': [], 'Training Loss': []}
+    for i in range(runs):
+        with open(title + name + '/' + str(i) + '/checkpoint_50.pth', 'rb') as file:
+            temp = torch.load(file, map_location=torch.device('cpu'))
+            data[name]['Test Loss'].append(temp['test_losses'])
+            running_averages = []
+            last = temp['train_losses'][0]
+            for num in temp['train_losses']:
+                last = decay * last + (1 - decay) * num
+                running_averages.append(last)
+            data[name]['Training Loss'].append(running_averages)
+
+
+
+# --- Test Loss ---
+metric = metrics[0]
+plt.figure()
+for name in names:
+    mean = np.clip(np.mean(data[name][metric], axis=0), 1e-8, None)
+    std = np.std(data[name][metric], axis=0)
+    x_vals = np.arange(0, total_steps + 1, epoch_step)
+    plt.semilogy(x_vals, mean, label=name, color=colors[name], linestyle=linestyles[name])
+    plt.fill_between(x_vals, mean + std, mean - std, alpha=0.2, color=colors[name])
+plt.title(title + metric)
+plt.legend()
+plt.savefig(title + metric)
+plt.show()
+
+# --- Training Loss ---
+metric = metrics[1]
+plt.figure()
+for name in names:
+    mean = np.mean(data[name][metric], axis=0)
+    std = np.std(data[name][metric], axis=0)
+    x_vals = range(len(mean))
+    plt.semilogy(x_vals, mean, label=name, color=colors[name], linestyle=linestyles[name])
+    plt.fill_between(x_vals, mean + std, mean - std, alpha=0.2, color=colors[name])
+plt.title(title + metric)
+plt.legend()
+plt.savefig(title + metric)
+plt.show()
