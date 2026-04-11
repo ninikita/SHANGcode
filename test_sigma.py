@@ -1,5 +1,5 @@
 # Evaluate robustness to multiplicative noise σ on
-# ResNet‑34 + CIFAR‑10 for SHANG / ISHANG / AGNES/ SNAG.
+# ResNet-34 + CIFAR-10 for SHANG / SHANG++ / AGNES/ SNAG.
 # ---------------------------------------------------------
 
 import os, time, random, csv
@@ -9,7 +9,7 @@ import torchvision, torchvision.transforms as T
 from torch.utils.data import DataLoader
 import pandas as pd
 import matplotlib.pyplot as plt
-from SHNAG_optim import SHANG, ISHANG
+from nn_optim import *
 
 if torch.backends.mps.is_available():
     DEVICE, PIN, NUM_WORKERS = torch.device('mps'), False, 0
@@ -59,22 +59,21 @@ def evaluate(model, loader, criterion):
         x, y = x.to(DEVICE), y.to(DEVICE)
         pred = model(x).argmax(1); correct += (pred==y).sum().item()
         total += y.size(0)
-    return 1 - correct/total   # Top‑1 error
+    return 1 - correct/total
 
 
-
+# Here, SHANGPlus = SHANG++
 BEST_CFGS = {
-    'SHANG':  {'alpha':0.5, 'time_scale':10, 'weight_decay': 1e-5 },
-    'ISHANG': {'alpha':0.5, 'time_scale':10, 'rho':1.5, 'weight_decay': 1e-5},
-    'AGNES':  {'lr':0.01,'correction':0.001,'momentum':0.99, 'weight_decay': 1e-5},
-    'SNAG': {'lr':0.05, 'momentum':0.9, 'weight_decay': 1e-5}
+    'SHANG':     {'alpha':0.5, 'time_scale':10, 'weight_decay': 1e-5 },
+    'SHANGPlus': {'alpha':0.5, 'time_scale':10, 'rho':1.5, 'weight_decay': 1e-5},
+    'AGNES':     {'lr':0.01,'correction':0.001,'momentum':0.99, 'weight_decay': 1e-5},
+    'SNAG':      {'lr':0.05, 'momentum':0.9, 'weight_decay': 1e-5}
 }
-
 
 SIGMA_LIST = [0,0.05,0.1,0.2, 0.5]
 SEEDS      = [23,24,25]
 NUM_EPOCHS = 100
-TARGET_ERR = 0.22          # 22% Top‑1 error
+TARGET_ERR = 0.22
 RESULT_CSV = 'sigma_results.csv'
 
 
@@ -87,7 +86,10 @@ def run():
         writer.writeheader()
 
         for sigma in SIGMA_LIST:
-            for algo, cls in [('SHANG',SHANG), ('ISHANG',ISHANG), ('AGNES',AGNES), ('SNAG',SNAG)]:
+            for algo, cls in [('SHANG',SHANG),
+                              ('SHANGPlus',SHANGPlus),
+                              ('AGNES',AGNES),
+                              ('SNAG',SNAG)]:
                 cfg = BEST_CFGS[algo]
                 for seed in SEEDS:
                     torch.manual_seed(seed); random.seed(seed)
@@ -114,13 +116,48 @@ def run():
 def analyze():
     df = pd.read_csv(RESULT_CSV)
     agg = df.groupby(['sigma','algo'])['final_err'].mean().reset_index()
-    for algo in agg.algo.unique():
-        part = agg[agg.algo==algo]
-        plt.plot(part.sigma, part.final_err*100, '-o', label=algo)
-    plt.xlabel('σ'); plt.ylabel('Top‑1 error (%)'); plt.legend()
-    plt.tight_layout(); plt.savefig('sigma_curve.png', dpi=300); plt.close()
+
+    display_map = {
+        'SHANG':     'SHANG',
+        'SHANGPlus': 'SHANG++',
+        'AGNES':     'AGNES',
+        'SNAG':      'SNAG',
+    }
+
+    color_map = {
+        'SHANG':   'green',
+        'SHANG++': 'red',
+        'AGNES':   'blue',
+        'SNAG':    'orange',
+    }
+
+    plt.figure(figsize=(7, 5))
+    for algo in ['SHANG', 'SHANGPlus', 'AGNES', 'SNAG']:
+        if algo not in agg.algo.unique():
+            continue
+        part = agg[agg.algo == algo].sort_values('sigma')
+        disp = display_map.get(algo, algo)
+        color = color_map.get(disp, 'black')
+
+        plt.plot(
+            part.sigma,
+            part.final_err * 100,
+            '-o',
+            linewidth=2.0,
+            label=disp,
+            color=color,
+        )
+
+    plt.xlabel('σ')
+    plt.ylabel('Mean classification error (%)')
+    plt.title('Robustness to multiplicative noise')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('sigma_curve.png', dpi=300, bbox_inches='tight')
+    plt.close()
     print('Saved sigma_curve.png')
 
+    # sigma_delta.csv
     base = agg[agg.sigma==0].set_index('algo')['final_err']
     rows = []
     for algo in base.index:
