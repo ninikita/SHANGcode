@@ -4,7 +4,7 @@ import numpy as np
 
 
 data = {}
-runs = 5
+runs = 1
 # For MNIST, train_size = 60000
 # For CIFAR10/100, train_size = 50000
 train_size = 50000
@@ -12,7 +12,7 @@ batch = 50
 epochs = 50
 epoch_step = train_size / batch
 total_steps = epoch_step * epochs
-title = "CIFAR100-ResNet50_batch50_for5runs"
+title = "CIFAR10-ResNet34_batch50_for5runs"
 
 names = [
     'SGD',
@@ -22,7 +22,7 @@ names = [
     'SNAG',
     'AGNES',
     'SHANG',
-    'ISHANG',
+    'SHANG++',
 ]
 
 # 设置颜色和线型
@@ -31,8 +31,8 @@ linestyles = {}
 style_list = ['-', '--', ':']
 
 color_map = {
+    'SHANG++': 'red',
     'SHANG': 'green',
-    'ISHANG': 'red',
     'AGNES': 'blue',
     'SNAG': 'orange',
     'SGD': 'gray',
