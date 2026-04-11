@@ -1,19 +1,16 @@
 ## Adapted from the AGNES codebase by Gupta et al. (MIT License).
 ## Source: https://github.com/kanangupta/AGNES
 
-import torch
 import torch.nn as nn
 import torchvision
-from torchvision.transforms import ToTensor
-import pickle
 from torchvision import datasets, models, transforms
-from util import  *
-from SHNAG_optim import SHANG, ISHANG
+from nn_optim import *
 import pickle
 import matplotlib.pyplot as plt
+from util import  *
 
 
-
+# CIFAR10
 train_transform = transforms.Compose([
             Cutout(num_cutouts=2, size=8, p=0.8),
             transforms.RandomCrop(32, padding=4),
@@ -25,6 +22,7 @@ test_transform = transforms.Compose([transforms.ToTensor(),
                                     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
                                     ])
 
+
 #downloading the data
 #train_dataset = torchvision.datasets.MNIST(root = 'data/mnist/', train = True, download=True, transform = ToTensor())
 #test_dataset = torchvision.datasets.MNIST(root = 'data/mnist/', train = False, transform = ToTensor())
@@ -32,13 +30,14 @@ test_transform = transforms.Compose([transforms.ToTensor(),
 train_dataset = torchvision.datasets.CIFAR10('data/cifar/', train=True, download=True, transform=train_transform)
 test_dataset = datasets.CIFAR10('data/cifar/', train=False, download=True, transform=test_transform)
 
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 50, shuffle = True)
+
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 64, shuffle = True)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size = 10, shuffle = True)
 
 
 #defining data loader, optimizer, and the loss function
-alphas = [1e-1, 5e-1, 1e-2, 5e-2, 5e-3]
-gammas = [0.5, 1, 1.5, 2, 2.5, 5, 10, 15, 20, 30]
+alphas = [5e-1]
+gammas = [1, 2, 3, 4, 5]
 optim_names = [(i,j) for i in alphas for j in gammas]
 
 # LeNet-5
@@ -59,9 +58,9 @@ optim_names = [(i,j) for i in alphas for j in gammas]
 
 models = {name: models.resnet34() for name in optim_names}
 
-optimizers={name: ISHANG(models[name].parameters(), alpha = name[0], time_scale = name[1], rho=1.5) for name in optim_names}
-optim_name = "ISHANG"
-use_data = "CIFAR-10"
+optimizers={name: SHANGPlus(models[name].parameters(), alpha = name[0], time_scale = name[1], rho=1.5) for name in optim_names}
+optim_name = "SHANG++"
+use_data = "CIFAR10"
 device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
 print(f"Training on device: {device}")
 
@@ -71,7 +70,7 @@ for name in optim_names:
 
 loss_fn = nn.CrossEntropyLoss() #Note: If you use this loss function, do not use a softmax layer at the end of the neural network
 
-no_of_epochs = 10
+no_of_epochs = 6
 losses = {name:[] for name in optim_names}
 for name in optim_names:
 	for epoch in range(no_of_epochs):
@@ -127,7 +126,7 @@ for alpha in alphas:
         if (alpha, gamma) not in losses:
             continue
         line, = plt.semilogy(
-            [1, 2, 3, 4, 5, 6,7,8,9,10],
+            [1, 2, 3, 4, 5, 6],
             losses[(alpha, gamma)],
             color=color_alpha.get(alpha, 'black'),
             linestyle=style_gamma.get(gamma, 'solid'),
@@ -156,4 +155,3 @@ plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.tight_layout()
 plt.savefig(f"{optim_name}_{use_data}_grid_search_plot.pdf")
 plt.show()
-
