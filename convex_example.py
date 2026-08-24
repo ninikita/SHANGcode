@@ -65,7 +65,7 @@ def run_plot(deg, sigma, T=1, noofruns=1, batch_size=1):
             print("   Time is " + str(current_time) + ", steps = ", n)
         for i in range(effective_runs):
 
-            # HNAG
+            # SHANG
             xcurrent_SHANG = x_SHANG[range(int(i * batch_size), int((i + 1) * batch_size))]
             v_prev_SHANG = v_SHANG[range(int(i * batch_size), int((i + 1) * batch_size))]
             val_SHANG[range(int(i * batch_size), int((i + 1) * batch_size))] = f(xcurrent_SHANG, deg)
@@ -85,7 +85,7 @@ def run_plot(deg, sigma, T=1, noofruns=1, batch_size=1):
                         alpha_SHANG / (1 + alpha_SHANG)) * v_current_SHANG - beta_SHANG * (alpha_SHANG / (
                         1 + alpha_SHANG)) * grad_SHANG
 
-            # IHNAG
+            # SHANG++
             xcurrent_SHANGplus = x_SHANGplus[range(int(i * batch_size), int((i + 1) * batch_size))]
             v_prev_SHANGplus = v_SHANGplus[range(int(i * batch_size), int((i + 1) * batch_size))]
             val_SHANGplus[range(int(i * batch_size), int((i + 1) * batch_size))] = f(xcurrent_SHANGplus, deg)
