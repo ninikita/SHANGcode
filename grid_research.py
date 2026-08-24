@@ -4,7 +4,7 @@
 import torch.nn as nn
 import torchvision
 from torchvision import datasets, models, transforms
-from nn_optim import *
+from SHANG import *
 import pickle
 import matplotlib.pyplot as plt
 from util import  *
