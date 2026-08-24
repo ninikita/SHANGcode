@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import os, random
 from torchvision import datasets, models, transforms
-from nn_optim import *
+from SHANG import *
 from util import *
 
 class Trainer:
