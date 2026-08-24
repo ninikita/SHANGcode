@@ -6,6 +6,7 @@ import torch.nn as nn
 from torchvision import datasets, models, transforms
 import os, random
 import torch.nn.functional as F
+from SHANG import *
 from util import *
 
 # 中量 UNet
@@ -166,7 +167,7 @@ for run, seed in enumerate(seeds):
         'SHANG': 'SHANG(self.net.parameters(), alpha={} , time_scale={}, weight_decay={})'.format(0.5, 0.5, 1e-5),
         'SHANG++': 'SHANGPlus(self.net.parameters(), alpha={} , time_scale={}, rho = {}, weight_decay={})'.format(0.5, 0.5, 1.5, 1e-5),
         'AGNES': 'AGNES(self.net.parameters(), lr={} , momentum={} , correction={}, weight_decay = {})'.format(0.01, 0.99,  0.001, 1e-5),
-        'NAG,': 'AGNES(self.net.parameters(), lr={} , momentum={} , correction={}, weight_decay={})'.format(1e-3, 0.99, 1e-3, 1e-5),
+        'NAG': 'AGNES(self.net.parameters(), lr={} , momentum={} , correction={}, weight_decay={})'.format(1e-3, 0.99, 1e-3, 1e-5),
         'ADAM': 'torch.optim.Adam(self.net.parameters(), lr=1e-3, weight_decay=1e-5)',
         'SHB': 'torch.optim.SGD(self.net.parameters(), lr=1e-3, momentum=0.99, weight_decay=1e-5)',
         'SGD': 'torch.optim.SGD(self.net.parameters(), lr=1e-3, momentum=0, weight_decay=1e-5)',
