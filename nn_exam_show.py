@@ -4,7 +4,7 @@ import numpy as np
 
 
 data = {}
-runs = 1
+runs = 5
 # For MNIST, train_size = 60000
 # For CIFAR10/100, train_size = 50000
 train_size = 50000
