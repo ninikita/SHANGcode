@@ -9,7 +9,7 @@ import torchvision, torchvision.transforms as T
 from torch.utils.data import DataLoader
 import pandas as pd
 import matplotlib.pyplot as plt
-from nn_optim import *
+from SHANG import *
 
 if torch.backends.mps.is_available():
     DEVICE, PIN, NUM_WORKERS = torch.device('mps'), False, 0
